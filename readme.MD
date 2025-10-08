@@ -1,1 +1,3 @@
 FIXME: Learn how javascript and APIs work
+
+Update 10/8/2025: I hosted this website and now it is up and running! I will continue to work on it over the course of this year and hopefully integrate AI into it somehow...
