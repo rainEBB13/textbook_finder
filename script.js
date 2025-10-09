@@ -8,6 +8,16 @@ function setStatus(message, visible = true) {
   status.hidden = !visible;
 }
 
+function escapeHtml(str) {
+  if (!str) return '';
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const query = (input.value || '').trim();
@@ -20,52 +30,74 @@ form.addEventListener('submit', async (e) => {
   }
 
   try {
-    // encode query to avoid breaking the URL
-    const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}&maxResults=20`);
-    if (!res.ok) throw new Error(`API error: ${res.status}`);
-    const data = await res.json();
+    const queryEncoded = encodeURIComponent(query);
 
-    if (!data.items || data.items.length === 0) {
+    // Fetch from Google Books and Open Library simultaneously
+    const [googleRes, openLibRes] = await Promise.all([
+      fetch(`https://www.googleapis.com/books/v1/volumes?q=${queryEncoded}&maxResults=10`),
+      fetch(`https://openlibrary.org/search.json?q=${queryEncoded}&limit=10`)
+    ]);
+
+    if (!googleRes.ok || !openLibRes.ok)
+      throw new Error('API request failed.');
+
+    const googleData = await googleRes.json();
+    const openLibData = await openLibRes.json();
+
+    // Combine results
+    const googleBooks = (googleData.items || []).map(book => {
+      const info = book.volumeInfo || {};
+      return {
+        title: info.title || 'Untitled',
+        authors: info.authors?.join(', ') || 'Unknown Author',
+        thumb: info.imageLinks?.thumbnail || '',
+        link: info.infoLink || '#',
+        source: 'Google Books',
+        access: book.accessInfo?.epub?.isAvailable || book.accessInfo?.pdf?.isAvailable
+          ? 'Free'
+          : 'Purchase'
+      };
+    });
+
+    const openLibBooks = (openLibData.docs || []).map(doc => {
+      const cover = doc.cover_i
+        ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`
+        : '';
+      return {
+        title: doc.title || 'Untitled',
+        authors: doc.author_name?.join(', ') || 'Unknown Author',
+        thumb: cover,
+        link: `https://openlibrary.org${doc.key}`,
+        source: 'Open Library',
+        access: 'Free'
+      };
+    });
+
+    const combinedBooks = [...googleBooks, ...openLibBooks];
+
+    if (combinedBooks.length === 0) {
       setStatus('No results found.', true);
       resultsDiv.innerHTML = '<p class="no-results">No books matched your query.</p>';
       return;
     }
 
-    setStatus(`${data.items.length} result(s) found.`, true);
+    setStatus(`${combinedBooks.length} result(s) found.`, true);
 
-    resultsDiv.innerHTML = data.items.map((book, idx) => {
-      const info = book.volumeInfo || {};
-      const title = info.title || 'Untitled';
-      const authors = info.authors ? info.authors.join(', ') : 'Unknown Author';
-      const thumb = info.imageLinks?.thumbnail || '';
-      const link = info.infoLink || '#';
-
-      // accessible card with keyboard-focusable link
-      return `
-        <article class="book" id="book-${idx}">
-          ${thumb ? `<img src="${thumb}" alt="Cover of ${escapeHtml(title)}">` : ''}
-          <div class="book-info">
-            <h3>${escapeHtml(title)}</h3>
-            <p class="authors">${escapeHtml(authors)}</p>
-            <a class="view-link" href="${escapeHtml(link)}" target="_blank" rel="noopener">View Book</a>
-          </div>
-        </article>
-      `;
-    }).join('');
+    resultsDiv.innerHTML = combinedBooks.map((book, idx) => `
+      <article class="book" id="book-${idx}">
+        ${book.thumb ? `<img src="${escapeHtml(book.thumb)}" alt="Cover of ${escapeHtml(book.title)}">` : ''}
+        <div class="book-info">
+          <h3>${escapeHtml(book.title)}</h3>
+          <p class="authors">${escapeHtml(book.authors)}</p>
+          <p class="source">Source: ${escapeHtml(book.source)}</p>
+          <p class="access">Access: ${escapeHtml(book.access)}</p>
+          <a class="view-link" href="${escapeHtml(book.link)}" target="_blank" rel="noopener">View Book</a>
+        </div>
+      </article>
+    `).join('');
 
   } catch (err) {
     console.error(err);
     setStatus('An error occurred while searching. Please try again later.');
   }
 });
-
-// small helper to avoid inserting raw HTML from API fields
-function escapeHtml(str) {
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
