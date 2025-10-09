@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Find textbooks quickly by title, author, or ISBN using the Google Books API.">
+  <meta name="theme-color" content="#ffffff">
+  <title>Textbook Finder</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="darkmode.css">
+</head>
+
+<body>
+  <button id="theme-toggle">🌙</button>
+  <main id="main" class="container">
+    <h1>📚 Textbook Finder</h1>
+
+    <form id="searchForm" aria-label="Search for textbooks">
+      <label for="searchInput" class="visually-hidden">Search</label>
+      <input id="searchInput" name="q" type="text" placeholder="Search by title, author, or ISBN" autocomplete="off" aria-controls="results">
+      <button id="search" type="submit">Search</button>
+    </form>
+
+    <div id="status" aria-live="polite" class="status" hidden></div>
+
+    <section id="results" role="region" aria-live="polite" aria-label="Search results"></section>
+
+    <noscript>
+      <p>Please enable JavaScript to use the search.</p>
+    </noscript>
+  </main>
+
+  <script src="script.js" defer></script>
+  <script src="darkmode.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,35 @@
+/* Default light mode styles */
+body {
+  background-color: #f5f5f5;
+  color: #222;
+  font-family: Arial, sans-serif;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* Card example */
+.book {
+  background: white;
+  border-radius: 10px;
+  padding: 10px;
+  margin: 10px;
+}
+
+/* 🌙 Dark mode styles */
+body.dark-mode {
+  background-color: #121212;
+  color: #eee;
+}
+
+body.dark-mode .book {
+  background: #1e1e1e;
+}
+
+/* Lighten the status text in dark mode */
+body.dark-mode #status {
+  color: #e0e0e0; /* or try #f0f0f0 for brighter text */
+}
+
+/* Optional — make "No results" text match */
+body.dark-mode .no-results {
+  color: #cccccc;
+}
