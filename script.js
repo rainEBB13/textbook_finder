@@ -29,23 +29,17 @@ form.addEventListener('submit', async (e) => {
     return;
   }
 
+  const queryEncoded = encodeURIComponent(query);
+  let googleBooks = [];
+  let openLibBooks = [];
+
+  // --- Fetch Google Books ---
   try {
-    const queryEncoded = encodeURIComponent(query);
-
-    // Fetch from Google Books and Open Library simultaneously
-    const [googleRes, openLibRes] = await Promise.all([
-      fetch(`https://www.googleapis.com/books/v1/volumes?q=${queryEncoded}&maxResults=10`),
-      fetch(`https://openlibrary.org/search.json?q=${queryEncoded}&limit=10`)
-    ]);
-
-    if (!googleRes.ok || !openLibRes.ok)
-      throw new Error('API request failed.');
-
+    const googleRes = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${queryEncoded}&maxResults=10`);
+    if (!googleRes.ok) throw new Error(`Google Books API error: ${googleRes.status}`);
     const googleData = await googleRes.json();
-    const openLibData = await openLibRes.json();
 
-    // Combine results
-    const googleBooks = (googleData.items || []).map(book => {
+    googleBooks = (googleData.items || []).map(book => {
       const info = book.volumeInfo || {};
       return {
         title: info.title || 'Untitled',
@@ -58,8 +52,17 @@ form.addEventListener('submit', async (e) => {
           : 'Purchase'
       };
     });
+  } catch (err) {
+    console.warn('Google Books fetch failed:', err);
+  }
 
-    const openLibBooks = (openLibData.docs || []).map(doc => {
+  // --- Fetch Open Library ---
+  try {
+    const openLibRes = await fetch(`https://openlibrary.org/search.json?q=${queryEncoded}&limit=10`);
+    if (!openLibRes.ok) throw new Error(`Open Library API error: ${openLibRes.status}`);
+    const openLibData = await openLibRes.json();
+
+    openLibBooks = (openLibData.docs || []).map(doc => {
       const cover = doc.cover_i
         ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`
         : '';
@@ -72,32 +75,31 @@ form.addEventListener('submit', async (e) => {
         access: 'Free'
       };
     });
-
-    const combinedBooks = [...googleBooks, ...openLibBooks];
-
-    if (combinedBooks.length === 0) {
-      setStatus('No results found.', true);
-      resultsDiv.innerHTML = '<p class="no-results">No books matched your query.</p>';
-      return;
-    }
-
-    setStatus(`${combinedBooks.length} result(s) found.`, true);
-
-    resultsDiv.innerHTML = combinedBooks.map((book, idx) => `
-      <article class="book" id="book-${idx}">
-        ${book.thumb ? `<img src="${escapeHtml(book.thumb)}" alt="Cover of ${escapeHtml(book.title)}">` : ''}
-        <div class="book-info">
-          <h3>${escapeHtml(book.title)}</h3>
-          <p class="authors">${escapeHtml(book.authors)}</p>
-          <p class="source">Source: ${escapeHtml(book.source)}</p>
-          <p class="access">Access: ${escapeHtml(book.access)}</p>
-          <a class="view-link" href="${escapeHtml(book.link)}" target="_blank" rel="noopener">View Book</a>
-        </div>
-      </article>
-    `).join('');
-
   } catch (err) {
-    console.error(err);
-    setStatus('An error occurred while searching. Please try again later.');
+    console.warn('Open Library fetch failed:', err);
   }
+
+  // --- Combine Results ---
+  const combinedBooks = [...googleBooks, ...openLibBooks];
+
+  if (combinedBooks.length === 0) {
+    setStatus('No results found or both APIs failed.', true);
+    resultsDiv.innerHTML = '<p class="no-results">No books matched your query.</p>';
+    return;
+  }
+
+  setStatus(`${combinedBooks.length} result(s) found.`, true);
+
+  resultsDiv.innerHTML = combinedBooks.map((book, idx) => `
+    <article class="book" id="book-${idx}">
+      ${book.thumb ? `<img src="${escapeHtml(book.thumb)}" alt="Cover of ${escapeHtml(book.title)}">` : ''}
+      <div class="book-info">
+        <h3>${escapeHtml(book.title)}</h3>
+        <p class="authors">${escapeHtml(book.authors)}</p>
+        <p class="source">Source: ${escapeHtml(book.source)}</p>
+        <p class="access">Access: ${escapeHtml(book.access)}</p>
+        <a class="view-link" href="${escapeHtml(book.link)}" target="_blank" rel="noopener">View Book</a>
+      </div>
+    </article>
+  `).join('');
 });
