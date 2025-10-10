@@ -35,7 +35,7 @@ form.addEventListener('submit', async (e) => {
 
   // --- Fetch Google Books ---
   try {
-    const googleRes = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${queryEncoded}&maxResults=10`);
+    const googleRes = await fetch(`/api/google-books?q=${queryEncoded}`);
     if (!googleRes.ok) throw new Error(`Google Books API error: ${googleRes.status}`);
     const googleData = await googleRes.json();
 
