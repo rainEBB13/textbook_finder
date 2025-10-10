@@ -98,7 +98,7 @@ form.addEventListener('submit', async (e) => {
         <p class="authors">${escapeHtml(book.authors)}</p>
         <p class="source">Source: ${escapeHtml(book.source)}</p>
         <p class="access">Access: ${escapeHtml(book.access)}</p>
-        <a class="view-link" href="${escapeHtml(book.link)}" target="_blank" rel="noopener">View Book</a>
+        <a class="view-link" href="${book.link}" target="_blank" rel="noopener">View Book</a>
       </div>
     </article>
   `).join('');
