@@ -33,7 +33,7 @@ form.addEventListener('submit', async (e) => {
   let googleBooks = [];
   let openLibBooks = [];
 
-  // --- Fetch Google Books ---
+  // --- Fetch Google Books via your backend ---
   try {
     const googleRes = await fetch(`/api/google-books?q=${queryEncoded}`);
     if (!googleRes.ok) throw new Error(`Google Books API error: ${googleRes.status}`);

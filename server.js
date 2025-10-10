@@ -1,13 +1,13 @@
 import express from "express";
-import fetch from "node-fetch"; // For making requests
+import fetch from "node-fetch";
 import dotenv from "dotenv";
 
 dotenv.config(); // Load .env variables
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Allow frontend files to be served
-app.use(express.static("public")); // assuming your HTML is in /public
+// Serve frontend files from /public folder
+app.use(express.static("public"));
 
 // Proxy route for Google Books
 app.get("/api/google-books", async (req, res) => {
@@ -30,4 +30,4 @@ app.get("/api/google-books", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
